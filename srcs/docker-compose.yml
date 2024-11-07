@@ -1,0 +1,61 @@
+  version: '3.7'
+
+  networks:
+    tfigueronet:
+      driver: bridge
+
+
+  services:
+    nginx:
+      image: nginx
+      restart: always
+      container_name: nginx
+      build: ./requirements/nginx
+      networks:
+        - tfigueronet
+      ports:
+          - "443:443"
+      volumes:
+          - wordpress_data:/var/www/html
+
+    mariadb:
+      image: mariadb
+      restart: always
+      container_name: mariadb
+      build: 
+        context: ./requirements/mariadb
+      networks:
+        - tfigueronet
+      env_file:
+        - .env
+      volumes:
+          - mariadb_data:/var/lib/mysql
+    
+    wordpress:
+      image: wordpress
+      restart: always
+      container_name: wordpress
+      depends_on:
+        - mariadb
+      build: ./requirements/wordpress
+      networks:
+        - tfigueronet
+      env_file:
+        - .env
+      volumes:
+        - wordpress_data:/var/www/html
+
+  volumes:
+    mariadb_data:
+      driver: local
+      driver_opts:
+        type: none
+        device: /home/tfiguero/data/mariadb
+        o: bind
+    wordpress_data:
+      driver: local
+      driver_opts:
+        type: none
+        device: /home/tfiguero/data/wordpress
+        o: bind
+
