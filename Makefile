@@ -2,7 +2,7 @@ NAME = inception
 
 # Data directories
 DATA_DIR = /home/tfiguero/data
-DB_DATA = $(DATA_DIR)/mysql
+DB_DATA = $(DATA_DIR)/mariadb
 WP_DATA = $(DATA_DIR)/wordpress
 
 # Docker Compose
