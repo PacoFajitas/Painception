@@ -1,61 +1,62 @@
-  version: '3.7'
+version: '3.7'
+services:
+  # Each container we'll create will have its own service block where we define
+  # container name, location of the build and the dockerfile, env file, ports & volumes
+  mariadb:
+    container_name: mariadb
+    build: ./requirements/mariadb
+    env_file: .env
+    restart: unless-stopped
+    expose: 
+      - "3306"
+    volumes:
+      - mariadb:/var/lib/mysql
+    networks:
+      -  inception
 
-  networks:
-    tfigueronet:
-      driver: bridge
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    env_file: .env
+    restart: on-failure
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress:/var/www/html
+      - ./requirements/nginx/conf:/etc/nginx/conf.d
+    networks:
+      - inception
+    depends_on:
+      - wordpress
 
+  wordpress:
+    container_name: wordpress
+    build: ./requirements/wordpress
+    env_file: .env
+    restart: on-failure
+    expose:
+      - "9000"
+    volumes:
+      - wordpress:/var/www/html
+    networks:
+      - inception
+    depends_on:
+      - mariadb
 
-  services:
-    nginx:
-      image: nginx
-      restart: always
-      container_name: nginx
-      build: ./requirements/nginx
-      networks:
-        - tfigueronet
-      ports:
-          - "443:443"
-      volumes:
-          - wordpress_data:/var/www/html
+volumes:
+  mariadb:
+    driver: local
+    driver_opts:
+      type: none
+      device: '/home/tfiguero/data/mariadb'
+      o: bind
+  wordpress:
+    driver: local
+    driver_opts:
+      type: none
+      device: '/home/tfiguero/data/wordpress'
+      o: bind
 
-    mariadb:
-      image: mariadb
-      restart: always
-      container_name: mariadb
-      build: 
-        context: ./requirements/mariadb
-      networks:
-        - tfigueronet
-      env_file:
-        - .env
-      volumes:
-          - mariadb_data:/var/lib/mysql
-    
-    wordpress:
-      image: wordpress
-      restart: always
-      container_name: wordpress
-      depends_on:
-        - mariadb
-      build: ./requirements/wordpress
-      networks:
-        - tfigueronet
-      env_file:
-        - .env
-      volumes:
-        - wordpress_data:/var/www/html
-
-  volumes:
-    mariadb_data:
-      driver: local
-      driver_opts:
-        type: none
-        device: /home/tfiguero/data/mariadb
-        o: bind
-    wordpress_data:
-      driver: local
-      driver_opts:
-        type: none
-        device: /home/tfiguero/data/wordpress
-        o: bind
-
+networks:
+  inception:
+    driver: bridge
